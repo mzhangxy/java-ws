@@ -85,9 +85,9 @@ public class App {
         }
         
         UUID = getEnvValue(envFromFile, "UUID", "3732162e-4179-416f-b5e2-ccbf8e4479ae");
-        DOMAIN = getEnvValue(envFromFile, "DOMAIN", "");
+        DOMAIN = getEnvValue(envFromFile, "DOMAIN", "michaeljacob.xgames.jp");
         SUB_PATH = getEnvValue(envFromFile, "SUB_PATH", "sub");
-        NAME = getEnvValue(envFromFile, "NAME", "Karlo");
+        NAME = getEnvValue(envFromFile, "NAME", "Xserver");
         
         String wspathFromEnv = getEnvValue(envFromFile, "WSPATH", null);
         if (wspathFromEnv != null) {
