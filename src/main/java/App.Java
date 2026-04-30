@@ -84,7 +84,7 @@ public class App {
             debug("Failed to load .env file: " + e.getMessage());
         }
         
-        UUID = getEnvValue(envFromFile, "UUID", "c5fdf30f-6402-4c15-a430-da17a376eb0b");
+        UUID = getEnvValue(envFromFile, "UUID", "3732162e-4179-416f-b5e2-ccbf8e4479ae");
         DOMAIN = getEnvValue(envFromFile, "DOMAIN", "");
         SUB_PATH = getEnvValue(envFromFile, "SUB_PATH", "sub");
         NAME = getEnvValue(envFromFile, "NAME", "Karlo");
