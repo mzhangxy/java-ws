@@ -231,14 +231,17 @@ public class App {
             debug("Failed to add access task: " + e.getMessage());
         }
     }
-    
+
     private static String generateSubscription() {
         String namePart = NAME.isEmpty() ? isp : NAME + "-" + isp;
-        String vlessUrl = String.format(
-                "vless://%s@%s:%d?encryption=none&security=%s&sni=%s&fp=chrome&type=ws&host=%s&path=%%2F%s#%s",
-                UUID, currentDomain, currentPort, tls, currentDomain, currentDomain, WSPATH, namePart);
+        String ssTlsParam = "tls".equals(tls) ? "tls;" : "";
         
-        return Base64.getEncoder().encodeToString((vlessUrl + "\n").getBytes(StandardCharsets.UTF_8));
+        String ssMethodPassword = Base64.getEncoder().encodeToString(("none:" + UUID).getBytes());
+        String ssUrl = String.format(
+                "ss://%s@%s:%d?plugin=v2ray-plugin;mode%%3Dwebsocket;host%%3D%s;path%%3D%%2F%s;%ssni%%3D%s;skip-cert-verify%%3Dtrue;mux%%3D0#%s",
+                ssMethodPassword, currentDomain, currentPort, currentDomain, WSPATH, ssTlsParam, currentDomain, namePart);
+        
+        return Base64.getEncoder().encodeToString((ssUrl + "\n").getBytes(StandardCharsets.UTF_8));
     }
     
     static class HttpHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
@@ -290,7 +293,7 @@ public class App {
             ctx.close();
         }
     }
-    
+
     static class WebSocketHandler extends SimpleChannelInboundHandler<WebSocketFrame> {
         private Channel outboundChannel;
         private boolean connected = false;
@@ -314,40 +317,19 @@ public class App {
         }
         
         private void handleFirstMessage(ChannelHandlerContext ctx, byte[] data) {
-            // 仅检查 VLESS (以0x00开头)
-            if (data.length > 18 && data[0] == 0x00) {
-                boolean uuidMatch = true;
-                for (int i = 0; i < 16; i++) {
-                    if (data[i + 1] != UUID_BYTES[i]) {
-                        uuidMatch = false;
-                        break;
-                    }
-                }
-                if (uuidMatch) {
-                    if (handleVless(ctx, data)) {
-                        protocolIdentified = true;
-                        return;
-                    }
+            // 仅检查 Shadowsocks
+            if (data.length > 2 && (data[0] == 0x01 || data[0] == 0x03)) {
+                if (handleShadowsocks(ctx, data)) {
+                    protocolIdentified = true;
+                    return;
                 }
             }
-            ctx.close(); // 非 VLESS 或 UUID 不匹配直接关闭
+            ctx.close();
         }
         
-        private boolean handleVless(ChannelHandlerContext ctx, byte[] data) {
+        private boolean handleShadowsocks(ChannelHandlerContext ctx, byte[] data) {
             try {
-                int addonsLength = data[17] & 0xFF;
-                int offset = 18 + addonsLength;
-                
-                if (offset + 1 > data.length) return false;
-                byte command = data[offset];
-                if (command != 0x01) return false;
-                offset++;
-                
-                if (offset + 2 > data.length) return false;
-                int port = ((data[offset] & 0xFF) << 8) | (data[offset + 1] & 0xFF);
-                offset += 2;
-                
-                if (offset >= data.length) return false;
+                int offset = 0;
                 byte atyp = data[offset];
                 offset++;
                 
@@ -360,14 +342,14 @@ public class App {
                             data[offset] & 0xFF, data[offset + 1] & 0xFF,
                             data[offset + 2] & 0xFF, data[offset + 3] & 0xFF);
                     addressLength = 4;
-                } else if (atyp == 0x02) { // 域名
+                } else if (atyp == 0x03) { // 域名
                     if (offset >= data.length) return false;
                     int hostLen = data[offset] & 0xFF;
                     offset++;
                     if (offset + hostLen > data.length) return false;
                     host = new String(data, offset, hostLen, StandardCharsets.UTF_8);
                     addressLength = hostLen;
-                } else if (atyp == 0x03) { // IPv6
+                } else if (atyp == 0x04) { // IPv6
                     if (offset + 16 > data.length) return false;
                     StringBuilder sb = new StringBuilder();
                     for (int i = 0; i < 16; i += 2) {
@@ -382,7 +364,12 @@ public class App {
                 
                 offset += addressLength;
                 
-                ctx.writeAndFlush(new BinaryWebSocketFrame(Unpooled.wrappedBuffer(new byte[]{0x00, 0x00})));
+                if (offset + 2 > data.length) return false;
+                
+                int port = ((data[offset] & 0xFF) << 8) | (data[offset + 1] & 0xFF);
+                offset += 2;
+                
+                // 【已移除 isBlockedDomain 的检测拦截】
                 
                 final byte[] remainingData;
                 if (offset < data.length) {
