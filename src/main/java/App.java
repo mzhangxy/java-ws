@@ -32,10 +32,10 @@ public class App {
     // ==========================================
     // ⬇️ 请在这里填入你的 Cloudflare 隧道 Token！ ⬇️
     // ==========================================
-    private static final String CF_TOKEN = "在这里填入你的超级长的Token字符串"; 
+    private static final String CF_TOKEN = "eyJhIjoiZDY1NWNiOTk2NzNlZTYzMDE4NDFkMmQyNmYxNTY5N2EiLCJ0IjoiYzdjYWJiYjgtMWIyZS00NmUwLWI2ZTQtODliMTQ1M2ViOTgyIiwicyI6Ik9XWTVaR1ZqTnpjdFkyVTFaUzAwT1RjekxUZzBaV0l0TXpRek0yUmlNelV4WXpVdyJ9"; 
     
     // ⬇️ 请在这里填写你在 Cloudflare 后台绑定的公网域名 (用于生成订阅链接) ⬇️
-    private static String PUBLIC_DOMAIN = "proxy.yourdomain.com"; 
+    private static String PUBLIC_DOMAIN = "giga.colorrora.com"; 
 
     private static String UUID;
     private static String DOMAIN;
