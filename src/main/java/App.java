@@ -239,10 +239,21 @@ public class App {
                 }
             }
 
-            info("正在启动 Cloudflare 隧道...");
-            ProcessBuilder pb = new ProcessBuilder("./cloudflared", "tunnel", "--no-autoupdate", "run", "--token", CF_TOKEN);
+            info("正在启动 Cloudflare 隧道 (强制 HTTP2 模式)...");
+            // 新增了 --protocol http2 参数，防止面板封锁 UDP 流量导致连不上
+            ProcessBuilder pb = new ProcessBuilder("./cloudflared", "tunnel", "--no-autoupdate", "--protocol", "http2", "run", "--token", CF_TOKEN);
             pb.redirectErrorStream(true); 
             cfProcess = pb.start();
+
+            // 临时修改：打印出 Cloudflared 的【所有】日志，方便我们看清报错原因
+            new Thread(() -> {
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(cfProcess.getInputStream()))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        info("[CF 日志] " + line); // 把过滤条件去掉了，全量打印
+                    }
+                } catch (IOException e) {}
+            }).start();
 
             // 启动一个线程来读取 cloudflared 的输出
             new Thread(() -> {
