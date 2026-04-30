@@ -38,9 +38,6 @@ public class App {
     private static boolean AUTO_ACCESS;
     private static boolean DEBUG;
     
-    private static String PROTOCOL_UUID;
-    private static byte[] UUID_BYTES;
-    
     private static String currentDomain;
     private static int currentPort = 443;
     private static String tls = "tls";
@@ -105,8 +102,6 @@ public class App {
         AUTO_ACCESS = Boolean.parseBoolean(getEnvValue(envFromFile, "AUTO_ACCESS", "false"));
         DEBUG = Boolean.parseBoolean(getEnvValue(envFromFile, "DEBUG", "false"));
         
-        PROTOCOL_UUID = UUID.replace("-", "");
-        UUID_BYTES = hexStringToByteArray(PROTOCOL_UUID);
         currentDomain = DOMAIN;
         SILENT_MODE = !DEBUG;
     }
@@ -468,20 +463,10 @@ public class App {
         }
     }
     
-    private static byte[] hexStringToByteArray(String s) {
-        int len = s.length();
-        byte[] data = new byte[len / 2];
-        for (int i = 0; i < len; i += 2) {
-            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
-                    + Character.digit(s.charAt(i + 1), 16));
-        }
-        return data;
-    }
-    
     public static void main(String[] args) {
         loadConfig();
         
-        info("Starting VLESS Server...");
+        info("Starting Shadowsocks Server...");
         info("Subscription Path: /" + SUB_PATH);
         
         getIp();
@@ -514,7 +499,7 @@ public class App {
             int actualPort = findAvailablePort(PORT);
             Channel ch = b.bind(actualPort).sync().channel();
             
-            info("✅ VLESS server is running on port " + actualPort);
+            info("✅ Shadowsocks server is running on port " + actualPort);
             ch.closeFuture().sync();
             
         } catch (InterruptedException e) {
